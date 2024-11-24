@@ -1,4 +1,3 @@
-import os
 import time
 
 import numpy as np
@@ -80,7 +79,7 @@ def select_k_best_features(df_full_data, top_k=10):
     1. Univariate Selection
        Statistical tests can be used to select those features that have the strongest relationship with the output variable.
     :param df_full_data: must be a pandas data frame that has the target column as the last column
-    :param k:  number of best features to select
+    :param top_k:  number of best features to select
     :return:
     """
     from sklearn.feature_selection import SelectKBest
@@ -103,7 +102,7 @@ def select_feature_importance(df_full_data, top_k=10):
     2. Feature Importance
        You can get the feature importance of each feature of your dataset by using the feature importance property of the model.
     :param df_full_data: must be a pandas data frame that has the target column as the last column
-    :param k:  number of best features to select
+    :param top_k:  number of best features to select
     :return:
     """
     from sklearn.ensemble import ExtraTreesClassifier
@@ -124,7 +123,6 @@ def select_correlation_features(df_full_data):
     3. Correlation Matrix with Heatmap
        Correlation states how the features are related to each other or the target variable.
     :param df_full_data: must be a pandas data frame that has the target column as the last column
-    :param k:  number of best features to select
     :return:
     """
     # https://towardsdatascience.com/feature-selection-techniques-in-machine-learning-with-python-f24e7da3f36e
@@ -187,7 +185,7 @@ def get_logistic_regression_model(imbalanced, class_data, max_iterations=100):
 # python main entry
 if __name__ == '__main__':
     adult_data = pd.read_csv('adult.csv', sep=",")
-    Y_Data = pd.read_csv('adult_Y_data_encode_binary.csv', sep=",")
+    Y_Data_binary = pd.read_csv('adult_Y_data_encode_binary.csv', sep=",")
     all_Data_df = pd.read_csv('adult_all_data_processed.csv', sep=",")
     all_Data_mean_encoded_df = pd.read_csv('adult_all_data_target_encoded.csv', sep=",")
     X_Data_label_encoded = pd.read_csv('adult_X_columns_label_encoded.csv', sep=",")
