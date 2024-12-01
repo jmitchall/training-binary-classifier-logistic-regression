@@ -159,7 +159,7 @@ def get_class_weights(df_classes):
 ONE_HOT_MISSING_VALUE = 0.0
 
 
-def get_logistic_regression_model(imbalanced, class_data, max_iterations=100, inverse_of_regularization_strength=1.0):
+def get_logistic_regression_model(imbalanced, class_data, max_iterations=100, inverse_of_regularization_strength=1.0, penalty='l2'):
     """
     Create a logistic regression model with or without class weights based on balance
     :param imbalanced: boolean
@@ -185,9 +185,9 @@ def get_logistic_regression_model(imbalanced, class_data, max_iterations=100, in
     if imbalanced:
         class_weights = get_class_weights(class_data)
         return_value = LogisticRegression(C=inverse_of_regularization_strength, class_weight=class_weights,
-                                          max_iter=max_iterations)
+                                          max_iter=max_iterations, penalty=penalty)
     else:
-        return_value = LogisticRegression(C=inverse_of_regularization_strength, max_iter=max_iterations)
+        return_value = LogisticRegression(C=inverse_of_regularization_strength, max_iter=max_iterations, penalty=penalty)
     return multiclass.OneVsRestClassifier(return_value)
 
 
@@ -740,12 +740,13 @@ def find_pipe_with_best_hyper_parameters_grid_search_cross_validation(x_numeric_
     pca_n_components = get_range_PCA_components(x_numeric_df)
     logistic_regression_Cs = get_range_logistic_regression_C()
     logistic_regression_penalties = get_range_logistic_regression_penalty()
-
+    # create a range of 1 to 200  in steps of 10
+    max_iterations = np.arange(100, 200, 50)
     # check for imbalance in the data
-    imbalance_detected = detect_imbalanced_labels(y_data_labels)
+    is_imbalance_detected = detect_imbalanced_labels(y_data_labels)
     assign_x_y_pipe_to_dict(vector_dict, f'logit_model model using {x_numeric_df.columns} including PCA',
                             x_numeric_df, y_data_labels,
-                            get_logistic_regression_model(imbalance_detected, class_data=y_data_labels),
+                            get_logistic_regression_model(is_imbalance_detected, class_data=y_data_labels),
                             with_pca_components=PCA())
     hyper_parameter_test_pipe = vector_dict[f'logit_model model using {x_numeric_df.columns} including PCA'][2]
     hyper_parameter_ranges = dict()
@@ -758,6 +759,7 @@ def find_pipe_with_best_hyper_parameters_grid_search_cross_validation(x_numeric_
         if key == 'onevsrestclassifier':
             hyper_parameter_ranges[f"{key}__estimator__C"] = logistic_regression_Cs
             hyper_parameter_ranges[f"{key}__estimator__penalty"] = logistic_regression_penalties
+            hyper_parameter_ranges[f"{key}__estimator__max_iter"] = max_iterations
     print("hyper_parameter_ranges: ", hyper_parameter_ranges)
     # GridSearchCV is a meta-estimator that performs cross-validated grid-search over a parameter grid.
     # GridSearchCV implements a “fit” and a “score” method. It also implements “score_samples”, “predict”,
@@ -768,7 +770,7 @@ def find_pipe_with_best_hyper_parameters_grid_search_cross_validation(x_numeric_
     gs_cross_validation = GridSearchCV(hyper_parameter_test_pipe, hyper_parameter_ranges, cv=cross_validation_folds,
                                        n_jobs=cpu_cores)
     gs_cross_validation.fit(x_numeric_df, y_data_labels)
-    return gs_cross_validation, imbalance_detected, [x_numeric_df, y_data_labels, gs_cross_validation.best_estimator_]
+    return gs_cross_validation, is_imbalance_detected, [x_numeric_df, y_data_labels, gs_cross_validation.best_estimator_]
 
 
 # python main entry
@@ -812,9 +814,10 @@ if __name__ == '__main__':
     vector_dict[f'Best estimator {gs_cross_validation_inst.best_estimator_}'] = best_x_y_pipe
 
     # Get Logistic Regression model with more iterations as opposed to default 100
-    logit_model = get_logistic_regression_model(imbalance_detected, class_data=Y_Data, max_iterations=200,
-                                                inverse_of_regularization_strength=gs_cross_validation_inst.best_params_[
-                                                    'onevsrestclassifier__estimator__C'])
+    logit_model = get_logistic_regression_model(imbalance_detected, class_data=Y_Data,
+                     max_iterations=gs_cross_validation_inst.best_params_['onevsrestclassifier__estimator__max_iter'],
+        inverse_of_regularization_strength=gs_cross_validation_inst.best_params_['onevsrestclassifier__estimator__C'],
+                            penalty=gs_cross_validation_inst.best_params_[ 'onevsrestclassifier__estimator__penalty'])
 
     top_range = 56
     spec_column, score_column = select_k_best_features(numeric_df, top_range).values.T  # transpose the values
