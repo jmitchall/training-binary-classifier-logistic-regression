@@ -536,12 +536,12 @@ def get_prediction_score(x_test_data, y_test_data, pipe_model):
                 Precision and recall are a tradeoff. Typically to increase precision for a 
                 given model implies lowering recall, though this depends on the precision-recall 
                 curve of your model, so you may get lucky. 
-                
+
                 If you want higher precision you need to restrict the positive predictions 
                 to those with highest certainty in your model, which means predicting fewer positives overall 
                 (which, in turn, usually results in lower recall).
                 https://stats.stackexchange.com/questions/186182/a-way-to-maintain-classifiers-recall-while-improving-precision
-                
+
                 If you want to maintain the same level of recall while improving precision, you will need a better classifier.
              """)
     print("\n")
@@ -813,6 +813,7 @@ if __name__ == '__main__':
     print("Best index: ", gs_cross_validation_inst.best_index_)
     vector_dict[f'Best estimator {gs_cross_validation_inst.best_estimator_}'] = best_x_y_pipe
 
+    # imbalanced, class_data, max_iterations=100, inverse_of_regularization_strength=1.0, penalty='l2'
     # Get Logistic Regression model with more iterations as opposed to default 100
     logit_model = get_logistic_regression_model(imbalance_detected, class_data=Y_Data,
                      max_iterations=gs_cross_validation_inst.best_params_['onevsrestclassifier__estimator__max_iter'],
